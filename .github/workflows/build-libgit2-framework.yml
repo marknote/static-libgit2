@@ -1,0 +1,30 @@
+name: Build libgit2 Framework
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest
+
+      - name: Install dependencies
+        run: |
+          brew update
+          brew install cmake wget libtool
+
+      - name: Run build script
+        run: |
+          chmod +x ./build-libgit2-framework.sh
+          ./build-libgit2-framework.sh

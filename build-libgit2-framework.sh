@@ -165,10 +165,11 @@ function build_libssh2() {
 function build_libgit2() {
     setup_variables $1 install
 
-    rm -rf libgit2-1.3.0
-    test -f v1.3.0.zip || wget -q https://github.com/libgit2/libgit2/archive/refs/tags/v1.3.0.zip
-    ditto -x -k --sequesterRsrc --rsrc v1.3.0.zip ./
-    cd libgit2-1.3.0
+    LIBGIT2_VERSION=1.9.1
+    rm -rf libgit2-$LIBGIT2_VERSION
+    test -f v$LIBGIT2_VERSION.zip || wget -q https://github.com/libgit2/libgit2/archive/refs/tags/v$LIBGIT2_VERSION.zip
+    ditto -x -k --sequesterRsrc --rsrc v$LIBGIT2_VERSION.zip ./
+    cd libgit2-$LIBGIT2_VERSION
 
     rm -rf build && mkdir build && cd build
 

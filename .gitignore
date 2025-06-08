@@ -2,3 +2,5 @@ install*
 dependencies
 .swiftpm
 .DS_Store
+.build
+
