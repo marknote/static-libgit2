@@ -5,13 +5,13 @@ export DEPENDENCIES_ROOT="$REPO_ROOT/dependencies"
 
 set -e
 
-rm -rf $DEPENDENCIES_ROOT
-mkdir $DEPENDENCIES_ROOT
+# rm -rf $DEPENDENCIES_ROOT
+mkdir -p $DEPENDENCIES_ROOT
 rm -rf $REPO_ROOT/*.xcframework
 rm -rf $REPO_ROOT/install*
 mkdir $REPO_ROOT/install
 
-AVAILABLE_PLATFORMS=(macosx-arm64 macosx iphoneos iphonesimulator maccatalyst maccatalyst-arm64 )
+AVAILABLE_PLATFORMS=(macosx-arm64 macosx iphoneos iphonesimulator)
 
 ### Setup common environment variables to run CMake for a given platform
 ### Usage:      setup_variables PLATFORM INSTALLDIR
@@ -137,12 +137,17 @@ function build_openssl() {
             echo "Unsupported or missing platform!";;
     esac
 
+    # Add OPENSSL_NO_DEPRECATED to prevent legacy symbols
+    export CFLAGS="$CFLAGS -DOPENSSL_NO_DEPRECATED"
+
     echo "Configuring for $PLATFORM ($ARCH) with $TARGET_OS"
     ./Configure --prefix=$REPO_ROOT/install-openssl/$PLATFORM \
         --openssldir=$REPO_ROOT/install-openssl/$PLATFORM \
-        $TARGET_OS no-shared no-dso no-hw no-engine
+        $TARGET_OS no-shared no-dso no-hw no-engine no-module \
+        no-deprecated
 
     echo "Building..."
+
     make || { echo "Build failed"; exit 1; }
     
     echo "Installing..."
@@ -159,7 +164,7 @@ function build_libssh2() {
     test -f libssh2-1.10.0.tar.gz || wget -q https://www.libssh2.org/download/libssh2-1.10.0.tar.gz
     tar xzf libssh2-1.10.0.tar.gz
     cd libssh2-1.10.0
-    more CMakeLists.txt
+    # more CMakeLists.txt
     # Fix CMake compatibility issue
     sed -i '' 's/cmake_minimum_required(VERSION [0-9.]*)/cmake_minimum_required(VERSION 3.5)/g' CMakeLists.txt
     rm -rf build && mkdir build && cd build
@@ -212,10 +217,10 @@ function build_xcframework() {
     lipo "$INSTALLDIR/macosx/lib/$FWNAME.a" "$INSTALLDIR/macosx-arm64/lib/$FWNAME.a" -create -output "$INSTALLDIR/macosx-fat/lib/$FWNAME.a"
     FRAMEWORKS_ARGS+=("-library" "$INSTALLDIR/macosx-fat/lib/$FWNAME.a" "-headers" "$INSTALLDIR/macosx/include")
 
-    echo "Creating fat binary for maccatalyst"
-    mkdir -p "$INSTALLDIR/maccatalyst-fat/lib"
-    lipo "$INSTALLDIR/maccatalyst/lib/$FWNAME.a" "$INSTALLDIR/maccatalyst-arm64/lib/$FWNAME.a" -create -output "$INSTALLDIR/maccatalyst-fat/lib/$FWNAME.a"
-    FRAMEWORKS_ARGS+=("-library" "$INSTALLDIR/maccatalyst-fat/lib/$FWNAME.a" "-headers" "$INSTALLDIR/maccatalyst/include")
+    #echo "Creating fat binary for maccatalyst"
+    #mkdir -p "$INSTALLDIR/maccatalyst-fat/lib"
+    #lipo "$INSTALLDIR/maccatalyst/lib/$FWNAME.a" "$INSTALLDIR/maccatalyst-arm64/lib/$FWNAME.a" -create -output "$INSTALLDIR/maccatalyst-fat/lib/$FWNAME.a"
+    #FRAMEWORKS_ARGS+=("-library" "$INSTALLDIR/maccatalyst-fat/lib/$FWNAME.a" "-headers" "$INSTALLDIR/maccatalyst/include")
 
     echo "Building" $FWNAME "XCFramework containing" ${PLATFORMS[@]}
 
@@ -252,9 +257,14 @@ for p in ${AVAILABLE_PLATFORMS[@]}; do
 
     # Put all of the generated *.a files into a single *.a file that will be in our framework
     cd $REPO_ROOT
-    libtool -v -static -o libgit2_all.a install-openssl/$p/lib/*.a install/$p/lib/*.a install-libssh2/$p/lib/*.a
-    cp libgit2_all.a install/$p/lib
-    rm libgit2_all.a
+    # libtool -v -static -o libgit2_all.a install-openssl/$p/lib/*.a install/$p/lib/*.a install-libssh2/$p/lib/*.a
+    libtool -static -o "install/$p/lib/libgit2_all.a" \
+        "install/$p/lib/libgit2.a" \
+        "install-libssh2/$p/lib/libssh2.a" \
+        "install-openssl/$p/lib/libssl.a" \
+        "install-openssl/$p/lib/libcrypto.a"
+    #cp libgit2_all.a install/$p/lib
+    #rm libgit2_all.a
 done
 
 build_xcframework libgit2_all install Clibgit2

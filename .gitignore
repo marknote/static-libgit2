@@ -3,4 +3,7 @@ dependencies
 .swiftpm
 .DS_Store
 .build
+libgit2.xcframework
+Clibgit2.xcframework
+*.xcuserstate
 
