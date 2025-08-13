@@ -174,7 +174,8 @@ function build_libgit2() {
     test -f v$LIBGIT2_VERSION.zip || wget -q https://github.com/libgit2/libgit2/archive/refs/tags/v$LIBGIT2_VERSION.zip
     ditto -x -k --sequesterRsrc --rsrc v$LIBGIT2_VERSION.zip ./
     cd libgit2-$LIBGIT2_VERSION
-
+    # Fix CMake compatibility issue
+    sed -i '' 's/cmake_minimum_required(VERSION [0-9.]*)/cmake_minimum_required(VERSION 3.5)/g' CMakeLists.txt
     rm -rf build && mkdir build && cd build
 
     # The CMake function that determines if `libssh2_userauth_publickey_frommemory` is defined doesn't
