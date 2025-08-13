@@ -120,7 +120,7 @@ function build_openssl() {
 
         "macosx"|"macosx-arm64")
             TARGET_OS=darwin64-$ARCH-cc
-            export CFLAGS="-isysroot $SYSROOT";;
+            export CFLAGS="-isysroot $SYSROOT -fvisibility=hidden -DOPENSSL_NO_DEPRECATED";;
 
         *)
             echo "Unsupported or missing platform!";;
