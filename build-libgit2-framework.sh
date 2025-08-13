@@ -99,6 +99,7 @@ function build_libpcre() {
 
 ### Build openssl for a given platform
 function build_openssl() {
+    echo "build openssl"
     setup_variables $1 install-openssl
 
     # It is better to remove and redownload the source since building make the source code directory dirty!
@@ -144,6 +145,7 @@ function build_openssl() {
 
 ### Build libssh2 for a given platform (assume openssl was built)
 function build_libssh2() {
+    echo "build libssh2"
     setup_variables $1 install-libssh2
 
     rm -rf libssh2-1.10.0
@@ -167,6 +169,7 @@ function build_libssh2() {
 ### See @setup_variables for the list of available platform names
 ### Assume openssl and libssh2 was built
 function build_libgit2() {
+    echo "build libgit2"
     setup_variables $1 install
 
     LIBGIT2_VERSION=1.3.2
