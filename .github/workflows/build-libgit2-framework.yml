@@ -1,4 +1,4 @@
-name: Build libgit2 Framework
+name: Build and Package libgit2 Framework
 
 on:
   workflow_dispatch:
@@ -28,3 +28,22 @@ jobs:
         run: |
           chmod +x ./build-libgit2-framework.sh
           ./build-libgit2-framework.sh
+
+      - name: Zip the XCFramework
+        run: |
+          cd $GITHUB_WORKSPACE
+          zip -r libgit2.xcframework.zip Clibgit2.xcframework
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: libgit2-xcframework
+          path: libgit2.xcframework.zip
+          retention-days: 7
+
+      - name: Create release (on tag)
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v1
+        with:
+          files: libgit2.xcframework.zip
+          generate_release_notes: true
