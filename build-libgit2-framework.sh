@@ -78,6 +78,7 @@ function setup_variables() {
 
 ### Build libpcre for a given platform
 function build_libpcre() {
+    echo "build libpcre"
     setup_variables $1 install
 
     rm -rf pcre-8.45
@@ -93,6 +94,7 @@ function build_libpcre() {
     cmake "${CMAKE_ARGS[@]}" .. >/dev/null 2>/dev/null
 
     cmake --build . --target install >/dev/null 2>/dev/null
+    echo "build libpcre done"
 }
 
 ### Build openssl for a given platform
@@ -104,7 +106,9 @@ function build_openssl() {
     test -f openssl-3.0.0.tar.gz || wget -q https://www.openssl.org/source/openssl-3.0.0.tar.gz
     tar xzf openssl-3.0.0.tar.gz
     cd openssl-3.0.0
-
+    if [[ -f "CMakeLists.txt" ]]; then
+        sed -i '' 's/cmake_minimum_required(VERSION [0-9.]*)/cmake_minimum_required(VERSION 3.5)/g' CMakeLists.txt
+    fi
     case $PLATFORM in
         "iphoneos")
             TARGET_OS=ios64-cross
@@ -229,8 +233,11 @@ for p in ${AVAILABLE_PLATFORMS[@]}; do
     
     # build_libpcre $p
     build_openssl $p
+    echo "openssl done for $p"
     build_libssh2 $p
+    echo "libssh2 done for $p"
     build_libgit2 $p
+    echo "libgit2 done for $p"
 
     # Put all of the generated *.a files into a single *.a file that will be in our framework
     cd $REPO_ROOT
