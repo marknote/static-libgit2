@@ -11,7 +11,7 @@ rm -rf $REPO_ROOT/*.xcframework
 rm -rf $REPO_ROOT/install*
 mkdir $REPO_ROOT/install
 
-AVAILABLE_PLATFORMS=(iphoneos iphonesimulator maccatalyst maccatalyst-arm64 macosx-arm64 macosx)
+AVAILABLE_PLATFORMS=(macosx-arm64 macosx iphoneos iphonesimulator maccatalyst maccatalyst-arm64 )
 
 ### Setup common environment variables to run CMake for a given platform
 ### Usage:      setup_variables PLATFORM INSTALLDIR
@@ -137,8 +137,10 @@ function build_openssl() {
     ./Configure --prefix=$REPO_ROOT/install-openssl/$PLATFORM \
         --openssldir=$REPO_ROOT/install-openssl/$PLATFORM \
         $TARGET_OS no-shared no-dso no-hw no-engine >/dev/null 2>/dev/null
-
+    echo "configure done"
+    echo "make openssl"
     make >/dev/null 2>/dev/null
+    echo "make install openssl"
     make install_sw install_ssldirs >/dev/null 2>/dev/null
     export -n CFLAGS
 }
