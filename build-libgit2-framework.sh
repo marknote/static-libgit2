@@ -102,14 +102,15 @@ function build_openssl() {
     echo "build openssl"
     setup_variables $1 install-openssl
 
-    # It is better to remove and redownload the source since building make the source code directory dirty!
     rm -rf openssl-3.0.0
     test -f openssl-3.0.0.tar.gz || wget -q https://www.openssl.org/source/openssl-3.0.0.tar.gz
     tar xzf openssl-3.0.0.tar.gz
     cd openssl-3.0.0
-    if [[ -f "CMakeLists.txt" ]]; then
-        sed -i '' 's/cmake_minimum_required(VERSION [0-9.]*)/cmake_minimum_required(VERSION 3.5)/g' CMakeLists.txt
-    fi
+    
+    # Clean previous builds
+    make distclean 2>/dev/null || true
+    ./clean 2>/dev/null || true
+
     case $PLATFORM in
         "iphoneos")
             TARGET_OS=ios64-cross
@@ -123,25 +124,29 @@ function build_openssl() {
             TARGET_OS=darwin64-$ARCH-cc
             export CFLAGS="-isysroot $SYSROOT -target $ARCH-apple-ios14.1-macabi";;
 
-        "macosx"|"macosx-arm64")
-            TARGET_OS=darwin64-$ARCH-cc
-            export CFLAGS="-isysroot $SYSROOT -fvisibility=hidden -DOPENSSL_NO_DEPRECATED";;
+        "macosx")
+            TARGET_OS=darwin64-x86_64-cc
+            export CFLAGS="-isysroot $SYSROOT -arch x86_64";;
+
+        "macosx-arm64")
+            TARGET_OS="darwin64-arm64-cc"
+            export CFLAGS="-isysroot $SYSROOT -arch arm64 -target arm64-apple-macos12.0"
+            export MACOSX_DEPLOYMENT_TARGET=12.0;;
 
         *)
             echo "Unsupported or missing platform!";;
     esac
 
-    echo "$PLATFORM $ARCH $TARGET_OS"
-
-    # See https://wiki.openssl.org/index.php/Compilation_and_Installation
+    echo "Configuring for $PLATFORM ($ARCH) with $TARGET_OS"
     ./Configure --prefix=$REPO_ROOT/install-openssl/$PLATFORM \
         --openssldir=$REPO_ROOT/install-openssl/$PLATFORM \
-        $TARGET_OS no-shared no-dso no-hw no-engine >/dev/null 2>/dev/null
-    echo "configure done"
-    echo "make openssl"
-    make >/dev/null 2>/dev/null
-    echo "make install openssl"
-    make install_sw install_ssldirs >/dev/null 2>/dev/null
+        $TARGET_OS no-shared no-dso no-hw no-engine
+
+    echo "Building..."
+    make || { echo "Build failed"; exit 1; }
+    
+    echo "Installing..."
+    make install_sw install_ssldirs
     export -n CFLAGS
 }
 
