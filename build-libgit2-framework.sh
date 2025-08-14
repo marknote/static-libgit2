@@ -102,10 +102,10 @@ function build_openssl() {
     echo "build openssl"
     setup_variables $1 install-openssl
 
-    rm -rf openssl-3.0.0
-    test -f openssl-3.0.0.tar.gz || wget -q https://www.openssl.org/source/openssl-3.0.0.tar.gz
-    tar xzf openssl-3.0.0.tar.gz
-    cd openssl-3.0.0
+    rm -rf openssl-3.5.0
+    test -f openssl-3.5.0.tar.gz || wget -q https://www.openssl.org/source/openssl-3.5.0.tar.gz
+    tar xzf openssl-3.5.0.tar.gz
+    cd openssl-3.5.0
     
     # Clean previous builds
     make distclean 2>/dev/null || true
@@ -138,20 +138,19 @@ function build_openssl() {
     esac
 
     # Add OPENSSL_NO_DEPRECATED to prevent legacy symbols
-    export CFLAGS="$CFLAGS -DOPENSSL_NO_DEPRECATED"
+    # export CFLAGS="$CFLAGS -DOPENSSL_NO_DEPRECATED"
 
     echo "Configuring for $PLATFORM ($ARCH) with $TARGET_OS"
     ./Configure --prefix=$REPO_ROOT/install-openssl/$PLATFORM \
         --openssldir=$REPO_ROOT/install-openssl/$PLATFORM \
-        $TARGET_OS no-shared no-dso no-hw no-engine no-module \
-        no-deprecated
+        $TARGET_OS no-asm no-shared no-async no-apps no-tests
 
     echo "Building..."
-
-    make || { echo "Build failed"; exit 1; }
-    
+    sed -ie "s!^CFLAG=!CFLAG=-isysroot $SDKROOT !" "Makefile" || true
+    # make || { echo "Build failed"; exit 1; }
+    make -j$(nproc)
     echo "Installing..."
-    make install_sw install_ssldirs
+    make install_sw #install_ssldirs
     export -n CFLAGS
 }
 
